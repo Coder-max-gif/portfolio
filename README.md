@@ -45,8 +45,9 @@ The site was tested in WebKit (iPhone 14) and Chrome (Pixel 7) as well as on des
 
 ## Photography
 
-- `hero.jpg`, `hero-mobile.jpg`, `portrait.jpg`: from the supplied portrait, graded warm, with the AI-generator watermark cropped out.
-- `stage.jpg`, `stage-portrait.jpg`, `cafe.jpg`: her own photos from financewithanuvamshi.com, graded to match. Confirm she's happy to reuse them.
+- `hero.jpg`, `hero-mobile.jpg`, `portrait.jpg`, `og.jpg`: cropped from the supplied office portrait ("short hair -.jpeg").
+- `stage.jpg`, `stage-portrait.jpg`: cropped from the supplied TEDx photo ("i am founder.jpeg").
+- `self-growth.jpg`: cropped from the supplied "self-growth.jpeg".
 - To add more photo cards, add entries to `beyond.items` in `content.config.ts`.
 
 ## PLACEHOLDERS: replace before launch

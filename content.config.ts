@@ -32,12 +32,12 @@ export const hero = {
   posterMobile: "/images/hero-mobile.jpg",
 };
 
-/** Photography. Stage + cafe photos come from her existing site (financewithanuvamshi.com). */
+/** Photography. Supplied by Anuvamshi (Oct 2026). */
 export const images = {
   portrait: "/images/portrait.jpg",
   stage: "/images/stage.jpg",
   stagePortrait: "/images/stage-portrait.jpg",
-  cafe: "/images/cafe.jpg",
+  selfGrowth: "/images/self-growth.jpg",
 };
 
 export const origin = [
@@ -104,7 +104,7 @@ export const beyond = {
   body: "Outside work, I'm deeply invested in self-growth, fitness, storytelling, and mental performance, because entrepreneurship is not just a business journey, it's a psychological one.",
   // Replace `src` with real photography. null = typographic panel.
   items: [
-    { caption: "Self-growth", src: "/images/cafe.jpg" as string | null },
+    { caption: "Self-growth", src: "/images/self-growth.jpg" as string | null },
     { caption: "Storytelling", src: "/images/stage-portrait.jpg" as string | null },
   ],
 };

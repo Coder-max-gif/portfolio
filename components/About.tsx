@@ -28,7 +28,7 @@ export default function About() {
               src={images.stage}
               alt="Anuvamshi Shetty speaking on stage"
               loading="lazy"
-              className="absolute inset-0 h-[116%] w-full object-cover object-[60%_30%]"
+              className="absolute inset-0 h-[116%] w-full object-cover object-[52%_50%]"
               style={{ y: imgY, top: "-8%" }}
             />
           </Reveal>
