@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion, useMotionValue, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, useMotionValue, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import { hero } from "@/content.config";
 import { ease } from "@/lib/motion";
 
@@ -10,9 +10,18 @@ import { ease } from "@/lib/motion";
  * as you scroll the window opens to full-bleed (Apple product-film style) while the
  * name, set in cream with mix-blend-mode: difference, inverts wherever it crosses the photo.
  */
+/** Desktop starting window, as rendered on the server. */
+const CLIP_TOP = "inset(14.00% 31.00% 14.00% 31.00% round 28.00px)";
+
 export default function Hero() {
   const ref = useRef<HTMLElement>(null);
-  const reduce = useReducedMotion();
+  const prefersReduced = useReducedMotion();
+  // The server always renders the top of the page with motion on. Match that on the first
+  // client render (scroll may already be restored mid-page), then hand over to the live values.
+  const [live, setLive] = useState(false);
+  useEffect(() => setLive(true), []);
+  const reduce = live && prefersReduced;
+  const at = <T,>(mv: MotionValue<T>, top: T, still: T) => (!live ? top : reduce ? still : mv);
   const { scrollYProgress: p } = useScroll({ target: ref, offset: ["start start", "end end"] });
 
   // Starting window: tall and narrow on desktop, nearly full-width on a phone.
@@ -64,12 +73,12 @@ export default function Hero() {
         {/* Portrait window */}
         <motion.div
           className="absolute inset-0 will-change-[clip-path]"
-          style={{ clipPath: reduce ? "inset(0)" : clip, WebkitClipPath: reduce ? "inset(0)" : clip }}
+          style={{ clipPath: at(clip, CLIP_TOP, "inset(0)"), WebkitClipPath: at(clip, CLIP_TOP, "inset(0)") }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.4, ease, delay: 0.1 }}
         >
-          <motion.picture className="block h-full w-full" style={{ scale: reduce ? 1 : imgScale }}>
+          <motion.picture className="block h-full w-full" style={{ scale: at(imgScale, 1.18, 1) }}>
             <source media="(max-width: 767px)" srcSet={hero.posterMobile} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -83,14 +92,14 @@ export default function Hero() {
           <motion.div
             aria-hidden
             className="absolute inset-0 bg-[linear-gradient(to_top,rgba(25,23,20,0.55),rgba(25,23,20,0)_45%)]"
-            style={{ opacity: reduce ? 1 : shade }}
+            style={{ opacity: at(shade, 0, 1) }}
           />
         </motion.div>
 
         {/* Eyebrow */}
         <motion.p
           className="eyebrow absolute inset-x-0 text-center"
-          style={{ top: "calc(var(--nav-h) + var(--safe-t) + 4vh)", opacity: reduce ? 1 : nameOpacity }}
+          style={{ top: "calc(var(--nav-h) + var(--safe-t) + 4vh)", opacity: at(nameOpacity, 1, 1) }}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease, delay: 0.9 }}
@@ -102,7 +111,7 @@ export default function Hero() {
         <motion.h1
           aria-label={hero.name}
           className="serif pointer-events-none absolute inset-x-0 top-[81%] -translate-y-1/2 text-center md:top-1/2 text-[19.5vw] text-cream mix-blend-difference md:text-[13.5vw]"
-          style={reduce ? undefined : { y: nameY, scale: nameScale, opacity: nameOpacity }}
+          style={{ y: at(nameY, "0%", "0%"), scale: at(nameScale, 1, 1), opacity: at(nameOpacity, 1, 1) }}
         >
           <span aria-hidden className="block">{letters(first, 0)}</span>
           <span aria-hidden className="block italic md:-mt-[0.12em] md:pl-[18vw]">{letters(last, first.length)}</span>
@@ -113,8 +122,8 @@ export default function Hero() {
           className="absolute inset-x-0 px-6 text-center text-cream md:px-10"
           style={{
             bottom: "calc(var(--safe-b) + 9vh)",
-            opacity: reduce ? 1 : tagOpacity,
-            y: reduce ? 0 : tagY,
+            opacity: at(tagOpacity, 0, 1),
+            y: at(tagY, 30, 0),
           }}
         >
           <p className="serif text-[clamp(2.6rem,7vw,6.5rem)] italic">{hero.tagline}</p>
@@ -126,7 +135,7 @@ export default function Hero() {
           <motion.div
             aria-hidden
             className="absolute inset-x-0 hidden flex-col items-center gap-2 text-ink-soft md:flex"
-            style={{ bottom: "calc(var(--safe-b) + 3vh)", opacity: cueOpacity }}
+            style={{ bottom: "calc(var(--safe-b) + 3vh)", opacity: at(cueOpacity, 1, 0) }}
           >
             <span className="text-[11px] uppercase tracking-[0.2em]">Scroll</span>
             <span className="relative block h-10 w-px overflow-hidden bg-ink/15">
