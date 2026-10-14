@@ -1,41 +1,53 @@
-import { about } from "@/content.config";
+"use client";
 
-/** Portrait in a gold offset frame, her own words beside it. */
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { about, images } from "@/content.config";
+import Reveal from "./Reveal";
+
+/** Stage photo with inner parallax, a smaller portrait floating over its corner, her words beside. */
 export default function About() {
-  return (
-    <section data-index="03 / About" className="relative mx-auto max-w-[1280px] px-6 py-40 md:px-14 md:py-60">
-      <div className="grid gap-20 md:grid-cols-12 md:gap-10">
-        <figure className="relative md:col-span-5 md:col-start-1">
-          <div className="relative">
-          <span aria-hidden className="absolute inset-0 translate-x-3 translate-y-3 border border-gold/60" />
-          <div className="relative overflow-hidden bg-ink-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              data-img
-              src="/images/portrait.jpg"
-              alt="Anuvamshi Shetty"
-              width={960}
-              height={1200}
-              loading="lazy"
-              className="block h-auto w-full"
-            />
-          </div>
-          </div>
-          <figcaption className="label mt-8">Anuvamshi Shetty</figcaption>
-        </figure>
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const imgY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+  const floatY = useTransform(scrollYProgress, [0, 1], [80, -80]);
 
-        <div className="md:col-span-6 md:col-start-7 md:pt-24">
-          <p className="label mb-10" data-reveal>About</p>
-          {/* oversized line pulls left across the gutter: deliberate grid break */}
-          <p
-            data-reveal
-            className="display mb-14 text-[clamp(2.4rem,4.6vw,4.4rem)] text-ivory md:-ml-[18%] md:bg-ink/0"
+  return (
+    <section ref={ref} id="about" className="mx-auto max-w-[1200px] px-6 py-28 md:px-8 md:py-44">
+      <Reveal as="p" className="eyebrow mb-6">About</Reveal>
+      <Reveal as="h2" className="serif mb-16 text-[clamp(3rem,9vw,8.5rem)] md:mb-24">
+        Ambition <em className="ink-gradient pr-2">deserves</em>
+        <br className="hidden md:block" /> access.
+      </Reveal>
+
+      <div className="grid gap-14 md:grid-cols-12 md:gap-10">
+        <div className="relative md:col-span-7">
+          <Reveal className="relative aspect-[4/3] overflow-hidden rounded-[28px] bg-cream-2" y={40}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <motion.img
+              src={images.stage}
+              alt="Anuvamshi Shetty speaking on stage"
+              loading="lazy"
+              className="absolute inset-0 h-[116%] w-full object-cover object-[60%_30%]"
+              style={{ y: imgY, top: "-8%" }}
+            />
+          </Reveal>
+          {/* floating portrait: deliberately breaks the grid */}
+          <motion.div
+            style={{ y: floatY }}
+            className="card absolute -bottom-10 right-4 w-[38%] overflow-hidden !rounded-[22px] p-1.5 md:-right-16 md:-bottom-16 md:w-[34%]"
           >
-            Ambition <em className="text-gold">deserves</em> access.
-          </p>
-          <div className="prose-col space-y-6 text-ivory-dim">
-            {about.map((p, i) => (
-              <p key={i} data-reveal data-delay={i * 0.08}>{p}</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={images.portrait} alt="" loading="lazy" className="block aspect-[4/5] w-full rounded-[17px] object-cover" />
+          </motion.div>
+        </div>
+
+        <div className="md:col-span-4 md:col-start-9 md:pt-6">
+          <div className="space-y-6 text-[17px] leading-[1.7] text-ink-soft">
+            {about.map((para, i) => (
+              <Reveal as="p" key={i} delay={i * 0.08} className={i === 0 ? "text-[1.25rem] leading-[1.5] text-ink" : ""}>
+                {para}
+              </Reveal>
             ))}
           </div>
         </div>

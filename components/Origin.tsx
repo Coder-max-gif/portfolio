@@ -1,79 +1,60 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
 import { origin } from "@/content.config";
-import { gsap, prefersReducedMotion } from "@/lib/gsap";
 
-/** Pinned, Apple-style: one sentence per screen, scrubbed by scroll. */
+function Word({ children, range, progress, accent }: { children: string; range: [number, number]; progress: MotionValue<number>; accent?: boolean }) {
+  const opacity = useTransform(progress, range, [0.14, 1]);
+  return (
+    <motion.span style={{ opacity }} className={`inline-block pr-[0.26em] ${accent ? "serif italic text-gold-deep" : ""}`}>
+      {children}
+    </motion.span>
+  );
+}
+
+/** Pinned paragraph; each word fills from faint to ink as you scroll through it. */
 export default function Origin() {
-  const root = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  const bar = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
-  useEffect(() => {
-    if (prefersReducedMotion()) return;
-    const ctx = gsap.context(() => {
-      const lines = gsap.utils.toArray<HTMLElement>("[data-line]");
-      gsap.set(lines, { opacity: 0, y: 40, filter: "blur(12px)" });
-
-      const tl = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: root.current,
-          start: "top top",
-          end: () => `+=${window.innerHeight * origin.length}`,
-          scrub: 0.8,
-          pin: true,
-          anticipatePin: 1,
-        },
-      });
-
-      lines.forEach((line, i) => {
-        tl.to(line, { opacity: 1, y: 0, filter: "blur(0px)", duration: 1 }, i === 0 ? 0 : "-=0.5");
-        if (i < lines.length - 1) {
-          tl.to(line, { opacity: 0, y: -40, filter: "blur(8px)", duration: 1 }, "+=0.6");
-          // background breathes between lines
-          tl.to(root.current, { backgroundColor: i % 2 ? "#0A0C10" : "#0E1116", duration: 1 }, "<");
-        } else {
-          tl.to("[data-origin-beam]", { opacity: 1, duration: 1 }, "<");
-        }
-      });
-      tl.to({}, { duration: 0.6 });
-      tl.fromTo("[data-origin-progress]", { scaleY: 0 }, { scaleY: 1, duration: tl.duration() }, 0);
-    }, root);
-    return () => ctx.revert();
-  }, []);
+  // flatten the five lines into words, remembering where each line starts
+  const words = origin.flatMap((line, li) =>
+    line.split(" ").map((w, wi) => ({ w, li, first: wi === 0 && li > 0 }))
+  );
+  const n = words.length;
+  const lastLine = origin.length - 1;
 
   return (
-    <section
-      id="origin"
-      ref={root}
-      data-index="02 / Origin"
-      className="relative flex h-[100svh] items-center justify-center overflow-hidden bg-ink motion-reduce:h-auto motion-reduce:py-40"
-    >
-      <div aria-hidden className="absolute left-6 top-1/2 h-[40vh] w-px -translate-y-1/2 bg-ivory/10 md:left-14">
-        <span data-origin-progress className="block h-full w-full origin-top bg-gold" />
-      </div>
-      <div
-        data-origin-beam
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-0 mix-blend-screen [background:radial-gradient(40vmax_22vmax_at_50%_55%,rgba(201,169,110,0.16),transparent_70%)]"
-      />
-
-      {/* Reduced-motion / no-JS: lines stack as normal text */}
-      <div className="relative grid w-full max-w-[1100px] place-items-center px-8">
-        {origin.map((line, i) => {
-          const isLast = i === origin.length - 1;
-          return (
-            <p
-              key={line}
-              data-line
-              className={`display col-start-1 row-start-1 text-center text-ivory motion-reduce:row-auto motion-reduce:mb-16 ${
-                isLast ? "text-[clamp(2.2rem,5.6vw,5.4rem)] italic" : "text-[clamp(2.6rem,7vw,7rem)]"
-              }`}
-            >
-              {line}
-            </p>
-          );
-        })}
+    <section id="origin" ref={ref} className={reduce ? "py-32" : "h-[320svh]"} aria-label="Origin">
+      <div className={`${reduce ? "" : "sticky top-0 h-[100svh]"} flex items-center`}>
+        <div className="mx-auto w-full max-w-[1200px] px-6 md:px-8">
+          <div className="mb-10 flex items-center gap-4">
+            <span className="eyebrow">Where it started</span>
+            <span className="relative h-px w-24 overflow-hidden bg-ink/10">
+              <motion.span className="absolute inset-0 origin-left bg-ink" style={{ scaleX: reduce ? 1 : bar }} />
+            </span>
+          </div>
+          <p className="headline max-w-[22ch] text-[clamp(2.1rem,5.6vw,5rem)]" aria-label={origin.join(" ")}>
+            {words.map(({ w, li, first }, i) => {
+              const start = (i / n) * 0.85;
+              return (
+                <span key={i} aria-hidden>
+                  {first && li >= 3 && <br className="hidden md:block" />}
+                  {reduce ? (
+                    <span className={`inline-block pr-[0.26em] ${li === lastLine && /scratch|opportunities/.test(w) ? "serif italic text-gold-deep" : ""}`}>{w}</span>
+                  ) : (
+                    <Word progress={scrollYProgress} range={[start, start + 0.85 / n + 0.04]} accent={li === lastLine && /scratch|opportunities/.test(w)}>
+                      {w}
+                    </Word>
+                  )}
+                </span>
+              );
+            })}
+          </p>
+        </div>
       </div>
     </section>
   );

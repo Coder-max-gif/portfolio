@@ -13,7 +13,7 @@ const cormorant = Cormorant_Garamond({
 });
 const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
   variable: "--font-dmsans",
   display: "swap",
 });
@@ -29,9 +29,16 @@ export const metadata: Metadata = {
     images: [{ url: "/images/og.jpg", width: 1200, height: 630 }],
   },
   twitter: { card: "summary_large_image", title: site.title, description: site.description },
+  appleWebApp: { title: "A. Shetty", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
 };
 
-export const viewport: Viewport = { themeColor: "#0A0C10" };
+export const viewport: Viewport = {
+  themeColor: "#F4EFE6",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover", // lets the design run under the iPhone notch; content respects safe areas
+};
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -58,7 +65,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${cormorant.variable} ${dmSans.variable}`}>
       <head>
-        <link rel="preload" as="image" href="/images/hero.jpg" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

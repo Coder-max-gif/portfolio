@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "gsap": "^3.12.5",
+    "framer-motion": "^14.2.0",
     "lenis": "^1.1.13",
     "next": "^15.0.0",
     "react": "^19.0.0",

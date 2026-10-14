@@ -1,76 +1,113 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { motion } from "framer-motion";
 import { beyond } from "@/content.config";
-import { gsap, prefersReducedMotion } from "@/lib/gsap";
+import { ease } from "@/lib/motion";
 
-/** Pinned horizontal gallery. Panels are typographic until real photography lands in content.config. */
+/**
+ * Swipeable rail. Native scroll-snap so it feels right under a thumb on iPhone/Android;
+ * on desktop it can also be dragged with the mouse or stepped with the arrows.
+ */
 export default function Beyond() {
-  const root = useRef<HTMLElement>(null);
-  const track = useRef<HTMLDivElement>(null);
+  const rail = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; left: number } | null>(null);
 
-  useEffect(() => {
-    if (prefersReducedMotion() || window.innerWidth < 768) return;
-    const ctx = gsap.context(() => {
-      const distance = () => track.current!.scrollWidth - window.innerWidth;
-      const tween = gsap.to(track.current, {
-        x: () => -distance(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: root.current,
-          start: "top top",
-          end: () => `+=${distance()}`,
-          pin: true,
-          scrub: 0.8,
-          invalidateOnRefresh: true,
-          anticipatePin: 1,
-        },
-      });
-      // slow inner parallax on each panel's image
-      gsap.utils.toArray<HTMLElement>("[data-inner]").forEach((el) => {
-        gsap.fromTo(el, { xPercent: -8 }, { xPercent: 8, ease: "none", scrollTrigger: { trigger: el.parentElement, containerAnimation: tween, start: "left right", end: "right left", scrub: true } });
-      });
-    }, root);
-    return () => ctx.revert();
-  }, []);
+  const step = (dir: 1 | -1) => {
+    const el = rail.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>("[data-card]");
+    el.scrollBy({ left: dir * ((card?.offsetWidth ?? 300) + 20), behavior: "smooth" });
+  };
+
+  const down = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    drag.current = { x: e.clientX, left: rail.current!.scrollLeft };
+    rail.current!.style.scrollSnapType = "none";
+  };
+  const move = (e: React.PointerEvent) => {
+    if (!drag.current) return;
+    rail.current!.scrollLeft = drag.current.left - (e.clientX - drag.current.x);
+  };
+  const up = () => {
+    if (!drag.current) return;
+    drag.current = null;
+    rail.current!.style.scrollSnapType = "";
+  };
 
   return (
-    <section ref={root} data-index="08 / Beyond" className="relative overflow-hidden py-32 md:flex md:h-[100svh] md:items-center md:py-0">
-      <div ref={track} className="flex flex-col gap-16 px-6 md:flex-row md:items-center md:gap-24 md:px-14 md:will-change-transform">
-        <div className="shrink-0 md:w-[38vw]">
-          <p className="label mb-8">{beyond.label}</p>
-          <p className="display text-[clamp(2.2rem,4vw,4rem)]">
-            Entrepreneurship is a <em className="text-gold">psychological</em> journey.
-          </p>
-          <p className="prose-col mt-10 text-ivory-dim">{beyond.body}</p>
+    <section className="relative bg-night pb-28 text-cream md:pb-40" aria-label={beyond.label}>
+      <div className="mx-auto max-w-[1200px] px-6 md:px-8">
+        <div className="flex items-end justify-between gap-8">
+          <div>
+            <p className="eyebrow mb-6 !text-cream/60">{beyond.label}</p>
+            <h2 className="headline max-w-[14ch] text-[clamp(2.4rem,5.6vw,5rem)]">
+              Entrepreneurship is a <span className="serif font-normal italic text-[#D9BC86]">psychological</span> journey.
+            </h2>
+          </div>
+          <div className={beyond.items.length > 2 ? "hidden gap-3 md:flex" : "hidden"}>
+            {([-1, 1] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => step(d)}
+                aria-label={d < 0 ? "Previous" : "Next"}
+                className="grid h-12 w-12 place-items-center rounded-full border border-cream/25 text-cream transition-colors duration-300 hover:bg-cream hover:text-ink"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                  <path d={d < 0 ? "M10 3 L5 8 L10 13" : "M6 3 L11 8 L6 13"} stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+            ))}
+          </div>
         </div>
+        <p className="mt-8 max-w-[52ch] text-[17px] leading-[1.7] text-cream/70">{beyond.body}</p>
+      </div>
 
+      <div
+        ref={rail}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={up}
+        onPointerLeave={up}
+        className="no-scrollbar mt-14 flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain px-6 pb-4 md:mt-20 md:cursor-grab md:px-[var(--rail-pad)] md:active:cursor-grabbing"
+        style={{ scrollPaddingLeft: "var(--rail-pad, 1.5rem)", ["--rail-pad" as string]: "max(2rem, calc((100vw - 1200px) / 2 + 2rem))" }}
+      >
         {beyond.items.map((item, i) => (
-          <figure key={item.caption} className={`relative shrink-0 md:w-[30vw] ${i % 2 ? "md:mt-32" : "md:-mt-24"}`}>
-            <div className="relative">
-            <span aria-hidden className="absolute inset-0 translate-x-3 translate-y-3 border border-gold/50" />
-            <div className="relative aspect-[4/5] overflow-hidden bg-ink-2">
+          <motion.figure
+            key={item.caption}
+            data-card
+            className="relative w-[78vw] shrink-0 snap-start select-none sm:w-[46vw] md:w-[340px] lg:w-[380px]"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 1, ease, delay: i * 0.08 }}
+          >
+            <div className="group relative aspect-[4/5] overflow-hidden rounded-[26px] bg-[#211d18]">
               {item.src ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img data-inner src={item.src} alt={item.caption} loading="lazy" className="h-full w-[116%] max-w-none object-cover" />
+                <img
+                  src={item.src}
+                  alt={item.caption}
+                  loading="lazy"
+                  draggable={false}
+                  className="h-full w-full object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.04]"
+                />
               ) : (
-                <div
-                  data-inner
-                  aria-hidden
-                  className="flex h-full w-[116%] items-end p-8 [background:radial-gradient(70%_60%_at_35%_30%,rgba(201,169,110,0.22),transparent_70%),linear-gradient(160deg,#151922,#0A0C10)]"
-                >
-                  <span className="display text-[9rem] leading-none text-gold/10">0{i + 1}</span>
+                <div className="flex h-full w-full flex-col justify-between p-7 [background:radial-gradient(80%_60%_at_20%_15%,rgba(201,169,110,0.28),transparent_65%),linear-gradient(160deg,#2a241d,#16130f)]">
+                  <span className="text-[13px] tracking-[0.18em] text-cream/50">0{i + 1}</span>
+                  <span className="serif text-[5.5rem] leading-none text-cream/15">{item.caption.split(" ")[0]}</span>
                 </div>
               )}
+              <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_top,rgba(18,16,13,0.6),transparent_40%)]" />
+              <figcaption className="absolute inset-x-0 bottom-0 flex items-baseline justify-between p-6">
+                <span className="headline text-[1.6rem]">{item.caption}</span>
+                <span className="text-[13px] text-cream/60">0{i + 1}</span>
+              </figcaption>
             </div>
-            </div>
-            <figcaption className="mt-6 flex items-baseline gap-4">
-              <span className="font-display text-gold">0{i + 1}</span>
-              <span className="display text-3xl">{item.caption}</span>
-            </figcaption>
-          </figure>
+          </motion.figure>
         ))}
-        <div aria-hidden className="hidden w-[8vw] shrink-0 md:block" />
+        <div aria-hidden className="w-1 shrink-0" />
       </div>
     </section>
   );

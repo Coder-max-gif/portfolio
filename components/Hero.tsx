@@ -1,185 +1,143 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { motion, useMotionValue, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { hero } from "@/content.config";
-import { gsap, prefersReducedMotion } from "@/lib/gsap";
+import { ease } from "@/lib/motion";
 
-/** Wait for the preloader to finish before starting the hero intro. */
-function onIntro(cb: () => void) {
-  if ((window as unknown as { __introDone?: boolean }).__introDone) {
-    cb();
-    return () => {};
-  }
-  window.addEventListener("intro:done", cb, { once: true });
-  return () => window.removeEventListener("intro:done", cb);
-}
-
+/**
+ * Signature moment. The portrait sits in a small rounded window behind her name;
+ * as you scroll the window opens to full-bleed (Apple product-film style) while the
+ * name, set in cream with mix-blend-mode: difference, inverts wherever it crosses the photo.
+ */
 export default function Hero() {
-  const root = useRef<HTMLElement>(null);
-  const beam = useRef<HTMLDivElement>(null);
-  const media = useRef<HTMLDivElement>(null);
-  const [first, last] = hero.name.split(" ");
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress: p } = useScroll({ target: ref, offset: ["start start", "end end"] });
 
+  // Starting window: tall and narrow on desktop, nearly full-width on a phone.
+  const phone = useMotionValue(0);
   useEffect(() => {
-    const section = root.current!;
-    const letters = Array.from(section.querySelectorAll<HTMLElement>("[data-letter]"));
-    const setBeam = (x: number, y: number) => {
-      beam.current!.style.setProperty("--beam-x", `${x}%`);
-      beam.current!.style.setProperty("--beam-y", `${y}%`);
-      // the conic shaft aims from off-screen left toward the pool of light
-      beam.current!.style.setProperty("--beam-angle", `${90 + (y - 50) * 0.6 + (x - 50) * 0.08}deg`);
-    };
+    const mq = window.matchMedia("(max-width: 767px)");
+    const set = () => phone.set(mq.matches ? 1 : 0);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  }, [phone]);
+  const clip = useTransform([p, phone], ([v, m]: number[]) => {
+    const win = m ? { t: 17, b: 24, x: 8 } : { t: 14, b: 14, x: 31 };
+    const k = 1 - Math.pow(1 - Math.min(v / 0.75, 1), 2); // ease-out
+    const r = (n: number) => (n * (1 - k)).toFixed(2);
+    return `inset(${r(win.t)}% ${r(win.x)}% ${r(win.b)}% ${r(win.x)}% round ${r(28)}px)`;
+  });
+  const imgScale = useTransform(p, [0, 0.8], [1.18, 1]);
+  const nameY = useTransform(p, [0, 0.6], ["0%", "-38%"]);
+  const nameScale = useTransform(p, [0, 0.6], [1, 0.82]);
+  const nameOpacity = useTransform(p, [0.35, 0.62], [1, 0]);
+  const tagOpacity = useTransform(p, [0.62, 0.82], [0, 1]);
+  const tagY = useTransform(p, [0.62, 0.82], [30, 0]);
+  const shade = useTransform(p, [0.5, 0.85], [0, 1]);
+  const cueOpacity = useTransform(p, [0, 0.08], [1, 0]);
 
-    if (prefersReducedMotion()) {
-      letters.forEach((l) => (l.style.opacity = "1"));
-      gsap.set("[data-hero-fade]", { opacity: 1, y: 0 });
-      setBeam(32, 62);
-      return;
-    }
-
-    const ctx = gsap.context(() => {});
-    let cleanupMove = () => {};
-    let sweepTween: gsap.core.Tween | null = null;
-
-    const stop = onIntro(() => {
-      ctx.add(() => {
-        // slow settle of the portrait/video, 1.08 -> 1.0 over 12s
-        gsap.fromTo(media.current, { scale: 1.08 }, { scale: 1, duration: 12, ease: "power2.out" });
-
-        // letter centres as % of the hero width, so the beam can "light" them
-        const box = section.getBoundingClientRect();
-        const pos = letters.map((l) => {
-          const r = l.getBoundingClientRect();
-          return ((r.left + r.width / 2 - box.left) / box.width) * 100;
-        });
-
-        const beamState = { x: -25, y: 64 };
-        const render = () => {
-          setBeam(beamState.x, beamState.y);
-          letters.forEach((l, i) => {
-            if (l.dataset.lit) return;
-            if (beamState.x + 6 >= pos[i]) {
-              l.dataset.lit = "1";
-              gsap.to(l, { opacity: 1, duration: 1.1, ease: "power2.out" });
-            }
-          });
-        };
-
-        const tl = gsap.timeline();
-        tl.to(beamState, { x: 110, duration: 4.2, ease: "power2.inOut", onUpdate: render })
-          .to("[data-hero-fade]", { opacity: 1, y: 0, duration: 1.2, stagger: 0.12 }, "-=0.6")
-          .add(() => {
-            letters.forEach((l) => gsap.to(l, { opacity: 1, duration: 0.6 }));
-            const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-            if (fine) {
-              // Desktop: beam follows the cursor with ~0.6s lag
-              gsap.to(beamState, { x: 62, y: 46, duration: 1.4, ease: "expo.out", onUpdate: () => setBeam(beamState.x, beamState.y) });
-              const qx = gsap.quickTo(beamState, "x", { duration: 0.6, ease: "power3.out", onUpdate: () => setBeam(beamState.x, beamState.y) });
-              const qy = gsap.quickTo(beamState, "y", { duration: 0.6, ease: "power3.out" });
-              const move = (e: PointerEvent) => {
-                const r = section.getBoundingClientRect();
-                if (e.clientY > r.bottom) return;
-                qx(((e.clientX - r.left) / r.width) * 100);
-                qy(((e.clientY - r.top) / r.height) * 100);
-              };
-              window.addEventListener("pointermove", move);
-              cleanupMove = () => window.removeEventListener("pointermove", move);
-            } else {
-              // Touch: slow auto-sweep with a long pause at each end
-              sweepTween = gsap.fromTo(
-                beamState,
-                { x: -20 },
-                { x: 120, duration: 6, ease: "sine.inOut", repeat: -1, yoyo: true, repeatDelay: 2.5, onUpdate: () => setBeam(beamState.x, beamState.y) }
-              );
-            }
-          });
-      });
-    });
-
-    // Pause the background video when the hero is off-screen
-    const video = section.querySelector("video");
-    const io = video
-      ? new IntersectionObserver(([e]) => (e.isIntersecting ? video.play().catch(() => {}) : video.pause()))
-      : null;
-    if (video && io) io.observe(section);
-
-    return () => {
-      stop();
-      cleanupMove();
-      sweepTween?.kill();
-      io?.disconnect();
-      ctx.revert();
-    };
-  }, []);
-
-  const renderWord = (word: string, italic = false) =>
+  const [first, last] = hero.name.split(" ");
+  const letters = (word: string, offset: number) =>
     word.split("").map((ch, i) => (
-      <span key={i} data-letter className={`inline-block opacity-[0.08] ${italic ? "italic" : ""}`}>
-        {ch}
+      <span key={i} className="inline-block overflow-hidden pb-[0.08em] align-bottom">
+        <motion.span
+          className="inline-block"
+          initial={{ y: "105%" }}
+          animate={{ y: "0%" }}
+          transition={{ duration: 1.2, ease, delay: 0.25 + (offset + i) * 0.045 }}
+        >
+          {ch}
+        </motion.span>
       </span>
     ));
 
   return (
     <section
       id="top"
-      ref={root}
-      data-index="01 / Lighthouse"
-      className="relative flex h-[100svh] min-h-[620px] items-end overflow-hidden bg-ink"
+      ref={ref}
+      className={`relative ${reduce ? "h-[100svh]" : "h-[230svh]"}`}
     >
-      {/* Media: real footage when available, graded portrait as fallback */}
-      <div ref={media} className="absolute inset-0 will-change-transform md:left-[22%]">
-        {hero.video ? (
-          <video
-            className="h-full w-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster={hero.poster}
-          >
-            <source src={hero.video.webm} type="video/webm" />
-            <source src={hero.video.mp4} type="video/mp4" />
-          </video>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={hero.poster}
-            alt="Portrait of Anuvamshi Shetty, lit by a single warm light"
-            className="h-full w-full object-cover object-[60%_30%] md:object-center"
-            fetchPriority="high"
+      <div className="sticky top-0 h-[100svh] overflow-hidden bg-cream">
+        {/* Portrait window */}
+        <motion.div
+          className="absolute inset-0 will-change-[clip-path]"
+          style={{ clipPath: reduce ? "inset(0)" : clip, WebkitClipPath: reduce ? "inset(0)" : clip }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.4, ease, delay: 0.1 }}
+        >
+          <motion.picture className="block h-full w-full" style={{ scale: reduce ? 1 : imgScale }}>
+            <source media="(max-width: 767px)" srcSet={hero.posterMobile} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={hero.poster}
+              alt="Portrait of Anuvamshi Shetty"
+              className="h-full w-full object-cover object-[50%_28%]"
+              fetchPriority="high"
+            />
+          </motion.picture>
+          {/* bottom shade so the tagline reads over the photo */}
+          <motion.div
+            aria-hidden
+            className="absolute inset-0 bg-[linear-gradient(to_top,rgba(25,23,20,0.55),rgba(25,23,20,0)_45%)]"
+            style={{ opacity: reduce ? 1 : shade }}
           />
-        )}
-      </div>
-      {/* Fade the portrait into ink so the type can breathe */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-[linear-gradient(to_top,var(--color-ink)_8%,rgba(10,12,16,0.55)_40%,rgba(10,12,16,0.15)_70%)] md:bg-[linear-gradient(90deg,var(--color-ink)_18%,rgba(10,12,16,0.75)_38%,rgba(10,12,16,0)_62%),linear-gradient(to_top,var(--color-ink),transparent_35%)]"
-      />
+        </motion.div>
 
-      <div ref={beam} className="beam" aria-hidden />
-
-      <div className="relative z-10 w-full px-6 pb-20 md:px-14 md:pb-24 lg:px-20">
-        <p data-hero-fade className="label mb-6 translate-y-6 opacity-0 md:mb-10">
+        {/* Eyebrow */}
+        <motion.p
+          className="eyebrow absolute inset-x-0 text-center"
+          style={{ top: "calc(var(--nav-h) + var(--safe-t) + 4vh)", opacity: reduce ? 1 : nameOpacity }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease, delay: 0.9 }}
+        >
           {hero.label}
-        </p>
-        <h1 className="display display-xl text-ivory" aria-label={hero.name}>
-          <span aria-hidden className="block">{renderWord(first)}</span>
-          {/* deliberate off-grid indent */}
-          <span aria-hidden className="block pl-[12vw] md:pl-[9vw]">{renderWord(last, true)}</span>
-        </h1>
-        <div className="mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
-          <p data-hero-fade className="translate-y-6 font-display text-2xl italic text-ivory/90 opacity-0 md:text-3xl">
-            {hero.tagline}
-          </p>
-        </div>
-      </div>
+        </motion.p>
 
-      {/* Scroll cue */}
-      <div aria-hidden className="absolute bottom-0 right-8 z-10 flex flex-col items-center gap-3 md:right-14">
-        <span className="label [writing-mode:vertical-rl]">Scroll</span>
-        <span className="block h-[60px] w-px origin-top animate-[cue_2.4s_var(--ease)_infinite] bg-gold" />
-        <style>{`@keyframes cue{0%{transform:scaleY(.3);opacity:.4}50%{transform:scaleY(1);opacity:1}100%{transform:scaleY(.3);opacity:.4}}`}</style>
+        {/* Name: cream + difference blend = dark on cream, light on the photo */}
+        <motion.h1
+          aria-label={hero.name}
+          className="serif pointer-events-none absolute inset-x-0 top-[81%] -translate-y-1/2 text-center md:top-1/2 text-[19.5vw] text-cream mix-blend-difference md:text-[13.5vw]"
+          style={reduce ? undefined : { y: nameY, scale: nameScale, opacity: nameOpacity }}
+        >
+          <span aria-hidden className="block">{letters(first, 0)}</span>
+          <span aria-hidden className="block italic md:-mt-[0.12em] md:pl-[18vw]">{letters(last, first.length)}</span>
+        </motion.h1>
+
+        {/* Tagline arrives once the window is fully open */}
+        <motion.div
+          className="absolute inset-x-0 px-6 text-center text-cream md:px-10"
+          style={{
+            bottom: "calc(var(--safe-b) + 9vh)",
+            opacity: reduce ? 1 : tagOpacity,
+            y: reduce ? 0 : tagY,
+          }}
+        >
+          <p className="serif text-[clamp(2.6rem,7vw,6.5rem)] italic">{hero.tagline}</p>
+          <p className="mt-4 text-[15px] text-cream/80">Founder, Lighthouse Capital</p>
+        </motion.div>
+
+        {/* Scroll cue */}
+        {!reduce && (
+          <motion.div
+            aria-hidden
+            className="absolute inset-x-0 hidden flex-col items-center gap-2 text-ink-soft md:flex"
+            style={{ bottom: "calc(var(--safe-b) + 3vh)", opacity: cueOpacity }}
+          >
+            <span className="text-[11px] uppercase tracking-[0.2em]">Scroll</span>
+            <span className="relative block h-10 w-px overflow-hidden bg-ink/15">
+              <motion.span
+                className="absolute inset-x-0 top-0 h-1/2 bg-ink"
+                animate={{ y: ["-100%", "200%"] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </span>
+          </motion.div>
+        )}
       </div>
     </section>
   );

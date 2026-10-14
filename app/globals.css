@@ -1,48 +1,54 @@
 @import "tailwindcss";
 
-/* ---------- Design tokens (02_DESIGN_SYSTEM.md) ---------- */
+/* ---------- Tokens: warm cream theme ---------- */
 @theme {
-  --color-ink: #0a0c10;
-  --color-ink-2: #12151b;
-  --color-ivory: #f3eee4;
-  --color-ivory-dim: #a9a59b;
-  --color-gold: #c9a96e;
-  --color-gold-soft: rgba(201, 169, 110, 0.18);
-  --color-bronze: #7a6340;
-  --color-paper: #efe9dd;
+  --color-cream: #f4efe6;
+  --color-cream-2: #ebe4d7;
+  --color-paper: #fbf8f2;
+  --color-ink: #191714;
+  --color-ink-soft: #5e574d;
+  --color-ink-mute: #8c8478;
+  --color-gold: #a47e45;
+  --color-gold-deep: #84652f;
+  --color-night: #12100d;
 
   --font-display: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
-  --font-sans: var(--font-dmsans), "DM Sans", system-ui, sans-serif;
+  --font-sans: var(--font-dmsans), "DM Sans", system-ui, -apple-system, sans-serif;
 
-  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-apple: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  color-scheme: dark;
+  color-scheme: light;
+  --nav-h: 56px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
 }
 
 html {
+  /* clip (not hidden) so position: sticky keeps working */
   overflow-x: clip;
-  background: var(--color-ink);
-  color: var(--color-ivory);
+  background: var(--color-cream);
+  color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   font-family: var(--font-sans);
   font-size: 17px;
-  line-height: 1.7;
-  overflow-x: hidden;
+  line-height: 1.6;
 }
 
 ::selection {
-  background: var(--color-gold);
-  color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-cream);
 }
 
-/* Lenis */
+/* Lenis (desktop only; touch keeps native momentum scrolling) */
 html.lenis,
 html.lenis body {
   height: auto;
@@ -50,79 +56,72 @@ html.lenis body {
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
 
-/* ---------- Type helpers ---------- */
-.display {
+/* ---------- Type ---------- */
+.serif {
   font-family: var(--font-display);
   font-weight: 300;
-  line-height: 0.95;
   letter-spacing: -0.02em;
+  line-height: 0.92;
 }
-.display-xl {
-  font-size: clamp(3rem, 9vw, 9rem);
+/* Apple-style bold sans headline */
+.headline {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
 }
-.label {
+.eyebrow {
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 11.5px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  letter-spacing: 0.22em;
-  color: var(--color-ivory-dim);
+  color: var(--color-ink-soft);
 }
-.prose-col {
-  max-width: 62ch;
-}
-.num-outline {
-  color: transparent;
-  -webkit-text-stroke: 1px var(--color-gold);
+.lede {
+  font-size: clamp(1.05rem, 0.9rem + 0.5vw, 1.3rem);
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+  max-width: 60ch;
 }
 
-/* ---------- Glass (nav, service panels, contact card only) ---------- */
-.glass {
-  position: relative;
-  background: rgba(255, 255, 255, 0.05);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  backdrop-filter: blur(22px) saturate(140%);
-  border: 1px solid rgba(201, 169, 110, 0.22);
+/* Gradient ink, used once per section for the key phrase */
+.ink-gradient {
+  background: linear-gradient(100deg, #191714 10%, #84652f 55%, #c9a96e 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Surfaces ---------- */
+.card {
+  background: var(--color-paper);
+  border: 1px solid rgba(25, 23, 20, 0.07);
+  border-radius: 28px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 30px 80px rgba(0, 0, 0, 0.5);
-  border-radius: 20px;
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 30px 60px -30px rgba(60, 45, 20, 0.25),
+    0 8px 20px -12px rgba(60, 45, 20, 0.12);
+}
+.frost {
+  background: rgba(244, 239, 230, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass {
-    background: rgba(18, 21, 27, 0.94);
+  .frost {
+    background: rgba(244, 239, 230, 0.97);
   }
 }
-/* Light that follows the cursor inside a card; --mx/--my set from JS */
-.glass-light::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s var(--ease);
-  background: radial-gradient(
-    420px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(201, 169, 110, 0.14),
-    transparent 60%
-  );
-}
-.glass-light:hover::after {
-  opacity: 1;
-}
 
-/* ---------- Links: gold underline draws left to right ---------- */
+/* ---------- Links & buttons ---------- */
 .link-draw {
-  background-image: linear-gradient(var(--color-gold), var(--color-gold));
+  background-image: linear-gradient(currentColor, currentColor);
   background-size: 0% 1px;
   background-position: 0 100%;
   background-repeat: no-repeat;
-  transition: background-size 0.6s var(--ease), color 0.4s var(--ease);
+  transition: background-size 0.6s var(--ease-apple);
   padding-bottom: 2px;
 }
 .link-draw:hover,
@@ -130,24 +129,32 @@ html.lenis body {
   background-size: 100% 1px;
 }
 
-/* ---------- Buttons: gold fills from cursor point ---------- */
 .btn {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  overflow: hidden;
-  border: 1px solid var(--color-gold);
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  padding: 0 1.6rem;
   border-radius: 999px;
-  padding: 0.95rem 1.9rem;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-ivory);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
   isolation: isolate;
-  transition: color 0.45s var(--ease);
+  transition: color 0.45s var(--ease-apple), background-color 0.45s var(--ease-apple);
 }
+.btn-dark {
+  background: var(--color-ink);
+  color: var(--color-cream);
+}
+.btn-ghost {
+  border: 1px solid rgba(25, 23, 20, 0.2);
+  color: var(--color-ink);
+}
+/* fill grows from the pointer position (--bx/--by set in JS) */
 .btn::before {
   content: "";
   position: absolute;
@@ -156,122 +163,89 @@ html.lenis body {
   width: 0;
   height: 0;
   border-radius: 50%;
-  background: var(--color-gold);
   transform: translate(-50%, -50%);
-  transition:
-    width 0.6s var(--ease),
-    height 0.6s var(--ease);
+  transition: width 0.6s var(--ease-apple), height 0.6s var(--ease-apple);
   z-index: -1;
 }
-.btn:hover,
-.btn:focus-visible {
-  color: var(--color-ink);
+.btn-dark::before {
+  background: var(--color-gold-deep);
 }
-.btn:hover::before,
-.btn:focus-visible::before {
-  width: 260%;
-  height: 520%;
+.btn-ghost::before {
+  background: var(--color-ink);
+}
+@media (hover: hover) {
+  .btn:hover::before {
+    width: 260%;
+    height: 560%;
+  }
+  .btn-ghost:hover {
+    color: var(--color-cream);
+  }
 }
 
 :focus-visible {
-  outline: 1px solid var(--color-gold);
-  outline-offset: 4px;
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
-/* ---------- Film grain + vignette ---------- */
+/* ---------- Paper grain ---------- */
 .grain {
-  position: absolute;
-  inset: -100%;
-  width: 300%;
-  height: 300%;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain 1s steps(8) infinite;
-}
-@keyframes grain {
-  0% { transform: translate(0, 0); }
-  12% { transform: translate(-4%, -6%); }
-  25% { transform: translate(-9%, 3%); }
-  37% { transform: translate(5%, -9%); }
-  50% { transform: translate(-3%, 8%); }
-  62% { transform: translate(8%, 2%); }
-  75% { transform: translate(2%, 7%); }
-  87% { transform: translate(-7%, -2%); }
-  100% { transform: translate(0, 0); }
-}
-.vignette {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 59;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+  z-index: 70;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ---------- THE BEAM ---------- */
-.beam {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  background:
-    radial-gradient(
-      38vmax 26vmax at var(--beam-x, 30%) var(--beam-y, 55%),
-      rgba(201, 169, 110, 0.32),
-      rgba(201, 169, 110, 0.1) 45%,
-      transparent 72%
-    ),
-    conic-gradient(
-      from calc(var(--beam-angle, 0deg) - 8deg) at var(--beam-ox, -10%) var(--beam-oy, 40%),
-      transparent 0deg,
-      rgba(201, 169, 110, 0.12) 6deg,
-      rgba(243, 238, 228, 0.16) 8deg,
-      rgba(201, 169, 110, 0.12) 10deg,
-      transparent 16deg,
-      transparent 360deg
-    );
-  filter: blur(6px);
-}
-
-/* Form */
+/* ---------- Form ---------- */
 .field {
   width: 100%;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid rgba(169, 165, 155, 0.35);
-  padding: 0.9rem 0;
-  color: var(--color-ivory);
-  font-size: 16px;
-  transition: border-color 0.4s var(--ease);
+  border-bottom: 1px solid rgba(25, 23, 20, 0.2);
   border-radius: 0;
+  padding: 1.4rem 0 0.6rem;
+  color: var(--color-ink);
+  font-size: 16px; /* >= 16px stops iOS zooming on focus */
+  transition: border-color 0.4s var(--ease-apple);
+  -webkit-appearance: none;
+  appearance: none;
 }
 .field:focus {
   outline: none;
-  border-bottom-color: var(--color-gold);
+  border-bottom-color: var(--color-ink);
 }
-.field::placeholder {
-  color: rgba(169, 165, 155, 0.6);
+.float-label {
+  position: absolute;
+  left: 0;
+  top: 1.35rem;
+  color: var(--color-ink-mute);
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform 0.4s var(--ease-apple), color 0.4s var(--ease-apple);
+}
+.field:focus + .float-label,
+.field:not(:placeholder-shown) + .float-label {
+  transform: translateY(-1.15rem) scale(0.75);
+  color: var(--color-ink-soft);
 }
 
-/* Custom cursor: hide native on fine pointers only */
-@media (hover: hover) and (pointer: fine) {
-  html.has-cursor,
-  html.has-cursor a,
-  html.has-cursor button,
-  html.has-cursor label {
-    cursor: none;
-  }
+/* Hide scrollbar on horizontal rails */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-/* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-  }
-  .grain {
-    animation: none;
+    animation-duration: 0.001ms !important;
   }
 }

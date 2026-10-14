@@ -1,8 +1,8 @@
 # Anuvamshi Shetty: Portfolio
 
-This site was built from the prompt pack in `prompt-pack/`. The concept is **THE BEAM**: one warm light that sweeps a dark screen and reveals the content.
+This is a warm cream, Apple-style portfolio for the founder of Lighthouse Capital. It was built from the prompt pack in `prompt-pack/`, and the lighthouse "beam" idea still appears in the services cards and the night-time Beliefs section.
 
-Stack: Next.js 15 (App Router), TypeScript, Tailwind CSS v4, GSAP + ScrollTrigger, Lenis.
+Stack: Next.js 15 (App Router), TypeScript, Tailwind CSS v4, Framer Motion, Lenis (desktop wheel smoothing only).
 
 ## Run
 
@@ -16,14 +16,38 @@ npm run build && npm start
 
 | What | Where |
 |---|---|
-| All copy, links, numbers | `content.config.ts` |
-| Colours, type, glass, beam, grain | `app/globals.css` |
-| Sections (in page order) | `components/Hero.tsx`, `Origin.tsx`, `About.tsx`, `Services.tsx`, `Principles.tsx`, `Split.tsx`, `Beliefs.tsx`, `Beyond.tsx`, `Credentials.tsx`, `Contact.tsx` |
-| Global behaviour | `SmoothScroll.tsx` (Lenis), `Preloader.tsx`, `Cursor.tsx`, `Nav.tsx`, `SectionIndex.tsx`, `Reveals.tsx`, `Atmosphere.tsx` |
+| All copy, links, numbers, image paths | `content.config.ts` |
+| Colours, type, buttons, cards, form | `app/globals.css` |
+| Sections (in page order) | `components/Hero.tsx`, `Origin.tsx`, `About.tsx`, `Services.tsx`, `Principles.tsx`, `Audience.tsx`, `Beliefs.tsx`, `Beyond.tsx`, `Credentials.tsx`, `Contact.tsx` |
+| Shared | `Nav.tsx` (frosted bar + phone menu), `Reveal.tsx`, `MagneticButton.tsx`, `SmoothScroll.tsx`, `lib/motion.ts` |
 | Contact endpoint | `app/api/contact/route.ts` |
-| Images | `public/images/` (`hero.jpg`, `portrait.jpg`, `og.jpg`) |
+| Images | `public/images/` |
 
-The portrait was graded from the supplied photo into a low-key ink-to-gold duotone with a side-lit vignette. The AI-generator watermark in the bottom-right corner was cropped out.
+## Signature effects
+
+- **Hero:** her portrait opens from a rounded window to full-screen as you scroll. Her name is set in cream with `mix-blend-mode: difference`, so it reads dark on the cream background and light on the photo.
+- **Origin:** a pinned paragraph whose words fill from faint to ink as you scroll.
+- **Services:** cards that stick and stack, with earlier cards settling back.
+- **Principles:** each row comes into full ink as it reaches the middle of the screen.
+- **For founders / For investors:** an iOS-style segmented control with a sliding pill.
+- **Beliefs:** the night section. A warm beam follows the cursor on desktop and drifts by itself on phones.
+- **Beyond the boardroom:** a native swipe rail on phones; drag or arrows on desktop.
+
+## Phones (iPhone and Android)
+
+The site was tested in WebKit (iPhone 14) and Chrome (Pixel 7) as well as on desktop.
+
+- `100svh` sizing, `viewport-fit=cover` and safe-area padding handle the notch and home bar.
+- Form fields use 16px text, so iOS doesn't zoom in when you tap one.
+- Nothing depends on hover. The founders/investors switch, menu and rail are all tap and swipe.
+- Phones keep native momentum scrolling; Lenis only smooths mouse wheels.
+- The iOS / Android "Reduce motion" setting is respected through `MotionConfig reducedMotion="user"`.
+
+## Photography
+
+- `hero.jpg`, `hero-mobile.jpg`, `portrait.jpg`: from the supplied portrait, graded warm, with the AI-generator watermark cropped out.
+- `stage.jpg`, `stage-portrait.jpg`, `cafe.jpg`: her own photos from financewithanuvamshi.com, graded to match. Confirm she's happy to reuse them.
+- To add more photo cards, add entries to `beyond.items` in `content.config.ts`.
 
 ## PLACEHOLDERS: replace before launch
 
@@ -31,26 +55,13 @@ Never invent numbers, deals or clients. Content still marked `[PLACEHOLDER]` is 
 
 1. `site.url`: the final domain (used for OG + JSON-LD).
 2. `contact.email`: the email address. The Email link appears once this is set.
-3. `socials`: the LinkedIn and Instagram URLs. YouTube is already set to `@AnuvamshiShetty`.
+3. `socials`: the Instagram URL. LinkedIn, YouTube and the CFA WhatsApp group are already set.
 4. `credentials.stats`: years of experience, founders supported and capital facilitated (they count up on scroll). Use plain numbers in `value` (e.g. `"8"`) and put any unit in `suffix` (e.g. `"+"`, `" Cr"`).
 5. `principles[].descriptor`: one line each, written by Anuvamshi herself.
 6. `footer.disclaimer`: confirm the exact wording with a compliance advisor.
 7. `app/api/contact/route.ts`: connect an email provider (e.g. Resend or Postmark). Submissions are only logged to the server console for now.
 8. Credentials: have her confirm each row.
 9. Press, logos, sectors: not included. Add them only with her approval.
-
-## Photography and video
-
-- **Hero video**: set `hero.video` in `content.config.ts` to `{ webm, mp4 }` files in `public/video/`. The hero switches from the portrait to the video automatically, keeps the beam on top, and pauses the video off-screen. Target under 4 MB, no audio. See `prompt-pack/05_VIDEO_SHOOT_BRIEF.md`.
-- **Beyond the boardroom**: set `beyond.items[].src` to real photos (self-growth, fitness, storytelling, mental performance), 4:5 portrait. Until then the panels are typographic.
-- **More portraits**: replace `public/images/portrait.jpg` (960x1200) with a real low-key shoot when available.
-- **OG image**: `public/images/og.jpg` (1200x630). Regenerate it if the portrait changes.
-
-## Motion and accessibility
-
-- `prefers-reduced-motion` turns off the beam sweep, pinned scroll, Lenis and every reveal. Content then renders statically.
-- On touch devices the cursor is hidden and the beam sweeps automatically. The horizontal gallery becomes a vertical stack below 768px.
-- Animations only touch transform, opacity, clip-path and filter. ScrollTriggers are killed on unmount.
 
 ## Final review
 

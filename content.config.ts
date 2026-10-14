@@ -29,6 +29,15 @@ export const hero = {
   // Leave null to use the graded portrait + animated beam fallback.
   video: null as null | { webm: string; mp4: string; mobileMp4?: string },
   poster: "/images/hero.jpg",
+  posterMobile: "/images/hero-mobile.jpg",
+};
+
+/** Photography. Stage + cafe photos come from her existing site (financewithanuvamshi.com). */
+export const images = {
+  portrait: "/images/portrait.jpg",
+  stage: "/images/stage.jpg",
+  stagePortrait: "/images/stage-portrait.jpg",
+  cafe: "/images/cafe.jpg",
 };
 
 export const origin = [
@@ -95,10 +104,8 @@ export const beyond = {
   body: "Outside work, I'm deeply invested in self-growth, fitness, storytelling, and mental performance, because entrepreneurship is not just a business journey, it's a psychological one.",
   // Replace `src` with real photography. null = typographic panel.
   items: [
-    { caption: "Self-growth", src: null as string | null },
-    { caption: "Fitness", src: null as string | null },
-    { caption: "Storytelling", src: null as string | null },
-    { caption: "Mental performance", src: null as string | null },
+    { caption: "Self-growth", src: "/images/cafe.jpg" as string | null },
+    { caption: "Storytelling", src: "/images/stage-portrait.jpg" as string | null },
   ],
 };
 

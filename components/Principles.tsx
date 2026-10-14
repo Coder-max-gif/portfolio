@@ -1,65 +1,42 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { principles } from "@/content.config";
-import { gsap, prefersReducedMotion } from "@/lib/gsap";
+import Reveal from "./Reveal";
 
-/** The one light "paper" section. Huge numbered rows; hovering one dims the rest. */
-export default function Principles() {
-  const root = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    if (prefersReducedMotion()) return;
-    const ctx = gsap.context(() => {
-      gsap.utils.toArray<HTMLElement>("[data-row]").forEach((row) => {
-        const tl = gsap.timeline({ scrollTrigger: { trigger: row, start: "top 85%", once: true } });
-        tl.fromTo(row.querySelector("[data-rule]"), { scaleX: 0 }, { scaleX: 1, duration: 1.4, ease: "power3.inOut" })
-          .from(row.querySelector("[data-num]"), { opacity: 0, x: -30, duration: 1.2 }, 0.2)
-          .from(row.querySelector("[data-title]"), { yPercent: 110, duration: 1.2 }, 0.35);
-        const desc = row.querySelector("[data-desc]");
-        if (desc) tl.from(desc, { opacity: 0, duration: 1 }, 0.7);
-      });
-    }, root);
-    return () => ctx.revert();
-  }, []);
+function Row({ i, title, descriptor }: { i: number; title: string; descriptor: string }) {
+  const ref = useRef<HTMLLIElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  // full ink in the middle of the screen, faint at the edges
+  const opacity = useTransform(scrollYProgress, [0.1, 0.4, 0.6, 0.92], [0.18, 1, 1, 0.18]);
+  const x = useTransform(scrollYProgress, [0.1, 0.45], [-24, 0]);
+  const line = useTransform(scrollYProgress, [0.15, 0.5], [0, 1]);
+  const [a, b] = title.split(" over ");
 
   return (
-    <section
-      id="principles"
-      ref={root}
-      data-index="05 / Principles"
-      className="relative bg-paper py-40 text-ink md:py-60"
-    >
-      <div className="mx-auto max-w-[1280px] px-6 md:px-14">
-        <p className="label mb-20 !text-bronze" data-reveal>The approach</p>
-        <ol className="group/list">
-          {principles.map((p, i) => (
-            <li
-              key={p.title}
-              data-row
-              className="relative py-10 transition-opacity duration-500 ease-expo group-hover/list:opacity-30 hover:!opacity-100 md:py-14"
-            >
-              <span data-rule aria-hidden className="absolute inset-x-0 top-0 block h-px origin-left bg-bronze/50" />
-              <div className="grid items-baseline gap-4 md:grid-cols-12">
-                <span
-                  data-num
-                  className="display text-[clamp(4rem,10vw,10rem)] text-transparent [-webkit-text-stroke:1px_var(--color-bronze)] md:col-span-3"
-                >
-                  0{i + 1}
-                </span>
-                <div className="overflow-hidden pb-2 md:col-span-9">
-                  <h3 data-title className="display text-[clamp(2.4rem,6vw,6.2rem)]">
-                    {p.title.split(" over ")[0]} <em className="text-bronze">over</em> {p.title.split(" over ")[1]}
-                  </h3>
-                </div>
-                {p.descriptor && (
-                  <p data-desc className="prose-col text-ink/70 md:col-span-6 md:col-start-4">{p.descriptor}</p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
+    <li ref={ref} className="relative py-10 md:py-14">
+      <motion.span aria-hidden className="absolute inset-x-0 top-0 block h-px origin-left bg-ink/15" style={{ scaleX: line }} />
+      <motion.div style={{ opacity, x }} className="grid items-baseline gap-3 md:grid-cols-12">
+        <span className="serif text-[2.2rem] text-gold md:col-span-2 md:text-[3.4rem]">0{i + 1}</span>
+        <h3 className="headline text-[clamp(2.3rem,6.6vw,6rem)] md:col-span-10">
+          {a} <span className="serif font-normal italic text-ink-mute">over</span> {b}
+        </h3>
+        {descriptor && <p className="lede md:col-span-8 md:col-start-3">{descriptor}</p>}
+      </motion.div>
+    </li>
+  );
+}
+
+export default function Principles() {
+  return (
+    <section id="principles" className="mx-auto max-w-[1200px] px-6 py-24 md:px-8 md:py-40">
+      <Reveal as="p" className="eyebrow mb-10 md:mb-16">The approach</Reveal>
+      <ol>
+        {principles.map((p, i) => (
+          <Row key={p.title} i={i} title={p.title} descriptor={p.descriptor} />
+        ))}
+      </ol>
     </section>
   );
 }
